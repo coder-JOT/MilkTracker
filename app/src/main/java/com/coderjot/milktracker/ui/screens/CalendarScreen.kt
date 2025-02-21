@@ -9,8 +9,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,25 +22,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CalendarScreen(
-    initialMonth: YearMonth = YearMonth.now(),
-    markedDates: Map<LocalDate, Boolean>, // true for delivered, false for not
-    onDateClick: (LocalDate) -> Unit
+    currentMonth: YearMonth,
+    markedDates: Map<LocalDate, Boolean>,
+    onDateClick: (LocalDate) -> Unit,
+    onMonthChanged: (YearMonth) -> Unit
 ) {
-    var currentMonth by remember { mutableStateOf(initialMonth) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        MonthSelector(currentMonth = currentMonth, onMonthChanged = { currentMonth = it })
+    Column {
+        MonthSelector(currentMonth = currentMonth, onMonthChanged = onMonthChanged)
         CalendarGrid(currentMonth = currentMonth, markedDates = markedDates, onDateClick = onDateClick)
     }
 }
@@ -45,21 +43,16 @@ fun CalendarScreen(
 @Composable
 fun MonthSelector(currentMonth: YearMonth, onMonthChanged: (YearMonth) -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = Modifier.padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM ಅವರನ್ನು")),
-            // Add style here later
-        )
+        Text(text = currentMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy")))
         Row {
-            androidx.compose.material3.IconButton(onClick = { onMonthChanged(currentMonth.minusMonths(1)) }) {
+            IconButton(onClick = { onMonthChanged(currentMonth.minusMonths(1)) }) {
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Previous Month")
             }
-            androidx.compose.material3.IconButton(onClick = { onMonthChanged(currentMonth.plusMonths(1)) }) {
+            IconButton(onClick = { onMonthChanged(currentMonth.plusMonths(1)) }) {
                 Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Next Month")
             }
         }
@@ -75,49 +68,38 @@ fun CalendarGrid(
 ) {
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Adjust to start week on Monday (1)
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7
 
-    val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun") //Or start with Sun
+    val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
     Column {
-        // Display days of the week headers
+        // Days of the week header
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth(),
+            // Removed fillMaxWidth()
+            modifier = Modifier
         ) {
             items(daysOfWeek) { day ->
                 Text(
                     text = day,
                     modifier = Modifier
-                        .fillMaxWidth()
                         .padding(4.dp),
                     textAlign = TextAlign.Center
-                    // Add style here later
                 )
             }
         }
-
-        // Display calendar days
+        // Calendar days
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        {
-
-            // Add empty cells for days before the first day of the month
-            items(firstDayOfWeek) {
-                Box(Modifier.size(40.dp)) {} // Empty cells
-            }
-            // Add days of month
+            // Removed fillMaxWidth()
+            modifier = Modifier
+        ) {
+            // Offset for the first day
+            items(firstDayOfWeek) { Box(modifier = Modifier.size(40.dp)) {} }
             items((1..daysInMonth).toList()) { day ->
                 val date = currentMonth.atDay(day)
-                val isDelivered = markedDates[date] ?: false // Check if the date is marked
-
-                CalendarDay(
-                    day = day,
-                    isDelivered = isDelivered,
-                    onDateClick = { onDateClick(date) }
-                )
+                val isDelivered = markedDates[date] ?: false
+                CalendarDay(day = day, isDelivered = isDelivered, onDateClick = { onDateClick(date) })
             }
         }
     }
@@ -130,8 +112,8 @@ fun CalendarDay(day: Int, isDelivered: Boolean, onDateClick: () -> Unit) {
             .size(40.dp)
             .padding(4.dp)
             .clip(CircleShape)
-            .background(if (isDelivered) Color.Green else Color.Transparent) // Mark delivered days
-            .clickable { onDateClick() }, // Handle date clicks
+            .background(if (isDelivered) Color.Green else Color.Transparent)
+            .clickable { onDateClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(text = day.toString())
@@ -139,7 +121,7 @@ fun CalendarDay(day: Int, isDelivered: Boolean, onDateClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "Delivered",
-                tint = Color.White, // White checkmark for contrast
+                tint = Color.White,
                 modifier = Modifier.size(20.dp)
             )
         }

@@ -1,65 +1,63 @@
 package com.coderjot.milktracker.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 @Composable
 fun SettingsScreen(
     dailyQuantity: Int,
     pricePerLiter: Int,
     onQuantityChange: (Int) -> Unit,
-    onPriceChange: (Int) -> Unit
+    onPriceChange: (Int) -> Unit,
+    onBack: () -> Unit
 ) {
+    var quantityText by remember { mutableStateOf(dailyQuantity.toString()) }
+    var priceText by remember { mutableStateOf(pricePerLiter.toString()) }
+
+    LaunchedEffect(dailyQuantity, pricePerLiter) {
+        quantityText = dailyQuantity.toString()
+        priceText = pricePerLiter.toString()
+    }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp), // Removed fillMaxSize
         horizontalAlignment = Alignment.CenterHorizontally,
-
-        ) {
-        Text("Settings")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        verticalArrangement = Arrangement.Top
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+        }
+        Text("Settings", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(24.dp))
         TextField(
-            value = dailyQuantity.toString(),
+            value = quantityText,
             onValueChange = { newValue ->
-                //Try catch for number format exception
-                try{
-                    onQuantityChange(newValue.toInt())
-                }catch (e: Exception){
-                    //
-                }
+                quantityText = newValue
+                newValue.toIntOrNull()?.let { onQuantityChange(it) }
             },
             label = { Text("Daily Quantity (Liters)") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-            )
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth() // If fillMaxWidth() is problematic, you can remove it
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
+        Spacer(modifier = Modifier.height(16.dp))
         TextField(
-            value = pricePerLiter.toString(),
+            value = priceText,
             onValueChange = { newValue ->
-                //Try catch for number format exception
-                try{
-                    onPriceChange(newValue.toInt())
-                }catch (e: Exception){
-                    //
-                }
+                priceText = newValue
+                newValue.toIntOrNull()?.let { onPriceChange(it) }
             },
             label = { Text("Price Per Liter") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-            )
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth() // Remove if causing issues
         )
     }
 }
